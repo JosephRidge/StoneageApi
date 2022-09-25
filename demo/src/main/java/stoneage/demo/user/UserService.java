@@ -1,5 +1,6 @@
 package stoneage.demo.user;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -59,11 +60,11 @@ public class UserService {
      */
     public List<User> getAllUsers()
             throws InterruptedException, ExecutionException {
-        List<User>users = null;
         Firestore dbFireStore = FirestoreClient.getFirestore();// get firestore instance
         ApiFuture<QuerySnapshot> future = dbFireStore.collection("user").get();  // asynchronously retrieve all documents
         List<QueryDocumentSnapshot> documents = future.get().getDocuments(); // future.get() blocks on response
         
+        List<User>users = new ArrayList<User>() ;
         User user = null;
         for (QueryDocumentSnapshot document : documents) {
             System.out.println(document.getId() + " => " + document.toObject(User.class));
