@@ -3,6 +3,8 @@
 - technology : Spring boot
 - Architecture : Api layer -> Service Layer -> Data Acces Layer - > Data BAse ( Firebase Firstore)
 - base_url : http://localhost:8080/api/v1/users/
+- exposed_base_url : https://4ff6db3a-a22c-4cbc-9724-ac3b406bedaf.mock.pstmn.io/api/v1/users
+kindlynote: I used postmans' mock server feature to generate it and linked it with the flutter application
 - Content-type : application/json
 
 
