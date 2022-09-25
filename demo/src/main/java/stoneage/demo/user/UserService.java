@@ -10,6 +10,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.google.api.core.ApiFuture;
+import com.google.cloud.firestore.DocumentReference;
+import com.google.cloud.firestore.DocumentSnapshot;
 import com.google.cloud.firestore.Firestore;
 import com.google.cloud.firestore.QueryDocumentSnapshot;
 import com.google.cloud.firestore.QuerySnapshot;
@@ -40,20 +42,24 @@ public class UserService {
     }
 
     // get praticular user
-    public String getUser(String username)
-            throws InterruptedException, ExecutionException {
+    public HashMap<String, Object> getUser(String username) throws InterruptedException, ExecutionException {
+        HashMap<String, Object> map = new HashMap<String, Object>();
+        User user = null;
+
         Firestore dbFireStore = FirestoreClient.getFirestore();// get firestore instance
-        ApiFuture<WriteResult> collectionApiFuture = dbFireStore.collection("user")
-                .document(username).set(username);// get firestore collection
-        try {
-            return collectionApiFuture.get().getUpdateTime().toString();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-            return e.getMessage();
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-            return e.getMessage();
-        }
+        DocumentReference documentReference = dbFireStore.collection("user").document(username);
+        ApiFuture<DocumentSnapshot> collectionApiFuture = documentReference.get();// get firestore collection
+        DocumentSnapshot documentSnapshot = collectionApiFuture.get();
+        if (documentSnapshot.exists()) {
+            user = documentSnapshot.toObject(User.class);
+            map.put("status", HttpStatus.OK);
+            map.put("message", user);
+            return map;
+        } else {
+            map.put("status", HttpStatus.NOT_FOUND);
+            map.put("message", "User Does not exist");
+            return map;
+        } 
 
     }
 
@@ -93,10 +99,10 @@ public class UserService {
         }
     }
 
-    public void deleteUser(User user) {
+    public void deleteUser(String username) {
         Firestore dbFireStore = FirestoreClient.getFirestore(); // get firestore instance
         // asynchronously delete a document
-        ApiFuture<WriteResult> writeResult = dbFireStore.collection("user").document(user.getUsername()).delete();
+        ApiFuture<WriteResult> writeResult = dbFireStore.collection("user").document(username).delete();
 
         try {
             System.out.println("Update time : " + writeResult.get().getUpdateTime());
@@ -112,8 +118,7 @@ public class UserService {
                 .setEmail(userProfile.getEmail())
                 .setEmailVerified(userProfile.getEmailVerified())
                 .setPassword(userProfile.getPassword())
-                .setDisplayName(userProfile.getUsername())
-                .setPhotoUrl(userProfile.getPhotoUrl())
+                .setDisplayName(userProfile.getUsername()) 
                 .setDisabled(userProfile.getAcntDisabled());
 
         UserRecord userRecord;

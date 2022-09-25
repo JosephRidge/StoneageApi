@@ -51,7 +51,16 @@ public class UserController {
             if (response.get("status") != HttpStatus.OK || response.get("status") == "400 BAD_REQUEST") {
                 return UserResponseHandler.generateResponse(
                         HttpStatus.BAD_REQUEST, false, "Failed", response.get("message"));
+
             } else {
+
+                // Add user once authorized add user to table
+                User user = new User();
+                user.setUsername(userProfile.getUsername());
+                user.setPassword(userProfile.getPassword());
+                user.setPassword(userProfile.getPassword());
+                user.setCreatedDate(userProfile.getCreatedAt());
+                userService.addNewUser(user);
 
                 return UserResponseHandler.generateResponse(
                         HttpStatus.OK, true, "Success", response.get("message"));
@@ -86,18 +95,21 @@ public class UserController {
     @GetMapping("/user_details/{username}")
     public ResponseEntity<Object> getUserDetails(@PathVariable String username) { // map the user request body
         try {
-            // userService.getUser(username);
+            HashMap<String, Object> response = userService.getUser(username);
+            if (response.get("status") != HttpStatus.OK || response.get("status") == "400 BAD_REQUEST") {
+                return UserResponseHandler.generateResponse(
+                        HttpStatus.BAD_REQUEST, false, "Failed", response.get("message"));
+
+            }else{
             return UserResponseHandler.generateResponse(
-                    HttpStatus.OK, true, "Success", userService.getUser(username));
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+                    HttpStatus.OK, true, "Success", response.get("message"));
+
+            }
+        } catch (InterruptedException | ExecutionException e) {
             return UserResponseHandler.generateResponse(
-                    HttpStatus.BAD_REQUEST, false, "Failed", e.getMessage());
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-            return UserResponseHandler.generateResponse(
-                    HttpStatus.BAD_REQUEST, false, "Failed", e.getMessage());
+                HttpStatus.BAD_REQUEST, false, "Failed", e.getMessage());
         }
+
     }
 
     @PutMapping("/update_user/{username}")
@@ -118,8 +130,8 @@ public class UserController {
     }
 
     @DeleteMapping("/delete_user/{username}")
-    public ResponseEntity<Object> deleteUser(@RequestBody User user) {
-        userService.deleteUser(user);
+    public ResponseEntity<Object> deleteUser(@PathVariable String username) {
+        userService.deleteUser(username);
         try {
             return UserResponseHandler.generateResponse(
                     HttpStatus.OK, true, "Success", "user profile removed !");
