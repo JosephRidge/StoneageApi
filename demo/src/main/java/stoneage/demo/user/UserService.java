@@ -1,9 +1,12 @@
 package stoneage.demo.user;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.google.api.core.ApiFuture;
@@ -11,6 +14,10 @@ import com.google.cloud.firestore.Firestore;
 import com.google.cloud.firestore.QueryDocumentSnapshot;
 import com.google.cloud.firestore.QuerySnapshot;
 import com.google.cloud.firestore.WriteResult;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuthException;
+import com.google.firebase.auth.UserRecord;
+import com.google.firebase.auth.UserRecord.CreateRequest;
 import com.google.firebase.cloud.FirestoreClient;
 
 @Service
@@ -88,17 +95,42 @@ public class UserService {
 
     public void deleteUser(User user) {
         Firestore dbFireStore = FirestoreClient.getFirestore(); // get firestore instance
+        // asynchronously delete a document
+        ApiFuture<WriteResult> writeResult = dbFireStore.collection("user").document(user.getUsername()).delete();
 
-        ApiFuture<WriteResult> writeResult = dbFireStore.collection("user").document(user.getUsername()).delete();// asynchronously
-                                                                                                                  // delete
-                                                                                                                  // a
-                                                                                                                  // document
         try {
             System.out.println("Update time : " + writeResult.get().getUpdateTime());
         } catch (InterruptedException e) {
             e.printStackTrace();
         } catch (ExecutionException e) {
             e.printStackTrace();
+        }
+    }
+
+    public HashMap<String, Object> createUserProfile(UserProfile userProfile) {
+        CreateRequest request = new CreateRequest()
+                .setEmail(userProfile.getEmail())
+                .setEmailVerified(userProfile.getEmailVerified())
+                .setPassword(userProfile.getPassword())
+                .setDisplayName(userProfile.getUsername())
+                .setPhotoUrl(userProfile.getPhotoUrl())
+                .setDisabled(userProfile.getAcntDisabled());
+
+        UserRecord userRecord;
+        try {
+            userRecord = FirebaseAuth.getInstance().createUser(request);
+            HashMap<String, Object> map = new HashMap<String, Object>();
+            map.put("status", HttpStatus.OK);
+            map.put("message", "Successfully created new user: " + userRecord.getUid());
+            return map;
+        } catch (FirebaseAuthException e) {
+            e.printStackTrace();
+            UserResponseHandler.generateResponse(
+                    HttpStatus.BAD_REQUEST, false, "Failed", e.getMessage());
+            HashMap<String, Object> map = new HashMap<String, Object>();
+            map.put("status", HttpStatus.BAD_REQUEST);
+            map.put("message", e.getMessage());
+            return map;
         }
     }
 }

@@ -1,18 +1,18 @@
 package stoneage.demo.user;
 
-import java.util.List;
+import java.util.HashMap;
 import java.util.concurrent.ExecutionException;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -32,48 +32,102 @@ public class UserController {
      */
 
     @PostMapping("/create/{username}")
-    public void saveNewUser(@RequestBody User user) { // map the user request body
+    public ResponseEntity<Object> saveNewUser(@RequestBody User user) { // map the user request body
         userService.addNewUser(user);
+        try {
+            return UserResponseHandler.generateResponse(
+                    HttpStatus.OK, true, "Success", "User Successfully added");
+
+        } catch (Exception e) {
+            return UserResponseHandler.generateResponse(
+                    HttpStatus.BAD_REQUEST, false, "Failed", e.getMessage());
+        }
+    }
+
+    @PostMapping("/auth/signup")
+    public ResponseEntity<Object> createNewUser(@RequestBody UserProfile userProfile) { // map the user request body
+        HashMap<String, Object> response = userService.createUserProfile(userProfile);
+        try {
+            if (response.get("status") != HttpStatus.OK || response.get("status") == "400 BAD_REQUEST") {
+                return UserResponseHandler.generateResponse(
+                        HttpStatus.BAD_REQUEST, false, "Failed", response.get("message"));
+            } else {
+
+                return UserResponseHandler.generateResponse(
+                        HttpStatus.OK, true, "Success", response.get("message"));
+            }
+        } catch (Exception e) {
+
+            return UserResponseHandler.generateResponse(
+                    HttpStatus.BAD_REQUEST, false, "Failed", e.getMessage());
+        }
     }
 
     @GetMapping
-    public List<User> getAllUsers() {
+    public ResponseEntity<Object> getAllUsers() {
         try {
-            return userService.getAllUsers();
+            return UserResponseHandler.generateResponse(
+                    HttpStatus.OK, true, "Success", userService.getAllUsers());
+
         } catch (InterruptedException e) {
             e.printStackTrace();
-            return null;
+            return UserResponseHandler.generateResponse(
+                    HttpStatus.BAD_REQUEST, false, "Failed", e.getMessage());
+
+            // return null;
         } catch (ExecutionException e) {
             e.printStackTrace();
-            return null;
+            return UserResponseHandler.generateResponse(
+                    HttpStatus.BAD_REQUEST, false, "Failed", e.getMessage());
+            // return null;
         }
     }
 
     @GetMapping("/user_details/{username}")
-    public void getUserDetails(@PathVariable String username) { // map the user request body
+    public ResponseEntity<Object> getUserDetails(@PathVariable String username) { // map the user request body
         try {
-            userService.getUser(username);
+            // userService.getUser(username);
+            return UserResponseHandler.generateResponse(
+                    HttpStatus.OK, true, "Success", userService.getUser(username));
         } catch (InterruptedException e) {
             e.printStackTrace();
+            return UserResponseHandler.generateResponse(
+                    HttpStatus.BAD_REQUEST, false, "Failed", e.getMessage());
         } catch (ExecutionException e) {
             e.printStackTrace();
+            return UserResponseHandler.generateResponse(
+                    HttpStatus.BAD_REQUEST, false, "Failed", e.getMessage());
         }
     }
 
     @PutMapping("/update_user/{username}")
-    public void updateUserDetails(@RequestBody User user) {
+    public ResponseEntity<Object> updateUserDetails(@RequestBody User user) throws InterruptedException {
         try {
             userService.updateUser(user);
+            return UserResponseHandler.generateResponse(
+                    HttpStatus.OK, true, "Success", "user Updated !");
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            // throw new InterruptedException();
+            return UserResponseHandler.generateResponse(
+                    HttpStatus.BAD_REQUEST, false, "Failed", e.getMessage());
         } catch (ExecutionException e) {
             e.printStackTrace();
+            return UserResponseHandler.generateResponse(
+                    HttpStatus.BAD_REQUEST, false, "Failed", e.getMessage());
         }
     }
 
     @DeleteMapping("/delete_user/{username}")
-    public void deleteUser(@RequestBody User user) {
+    public ResponseEntity<Object> deleteUser(@RequestBody User user) {
         userService.deleteUser(user);
+        try {
+            return UserResponseHandler.generateResponse(
+                    HttpStatus.OK, true, "Success", "user profile removed !");
+
+        } catch (Exception e) {
+            return UserResponseHandler.generateResponse(
+                    HttpStatus.BAD_REQUEST, false, "Failed", e.getMessage());
+        }
 
     }
 
